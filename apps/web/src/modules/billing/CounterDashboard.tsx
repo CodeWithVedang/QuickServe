@@ -13,10 +13,30 @@ export function CounterDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  const { data: activeOrders, isLoading } = useQuery({
+  const { data: rawOrders, isLoading } = useQuery({
     queryKey: ['counterOrders'],
-    queryFn: () => orderService.getOrdersByStatus(['preparing', 'done'])
+    queryFn: () => orderService.getOrdersByStatus(['pending', 'preparing', 'done'])
   });
+
+  // Group orders by table number to handle multi-part orders on one bill
+  const activeOrders = rawOrders ? Object.values(rawOrders.reduce((acc: Record<number, Order>, order) => {
+    if (order.table_number === null) return acc;
+    if (!acc[order.table_number]) {
+      acc[order.table_number] = { ...order, items: [...(order.items || [])] };
+    } else {
+      acc[order.table_number].items = [...(acc[order.table_number].items || []), ...(order.items || [])];
+      // Keep the "most advanced" status
+      const statusPriority = { 'pending': 0, 'preparing': 1, 'done': 2, 'paid': 3, 'cancelled': -1 };
+      if (statusPriority[order.status] > statusPriority[acc[order.table_number].status]) {
+        acc[order.table_number].status = order.status;
+      }
+    }
+    return acc;
+  }, {})) : [];
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   useEffect(() => {
     const channel = supabase.channel('counter-updates')
@@ -164,13 +184,20 @@ export function CounterDashboard() {
                 </div>
 
                 <div className="pt-2 border-t">
+                  <Button 
+                    variant="outline" 
+                    className="w-full mb-4 border-dashed border-2 hover:bg-orange-50 font-bold"
+                    onClick={handlePrint}
+                  >
+                    <Receipt className="w-4 h-4 mr-2" /> Print Receipt
+                  </Button>
 
                   <div className="space-y-3">
                     <p className="text-sm font-semibold text-gray-500 uppercase">Payment Method</p>
                     <div className="grid grid-cols-3 gap-2">
                       <Button 
                         variant="outline" 
-                        disabled={processing || selectedOrder.status !== 'done'}
+                        disabled={processing}
                         onClick={() => handlePayment('cash')}
                         className="flex flex-col h-auto py-3 items-center text-xs"
                       >
@@ -178,7 +205,7 @@ export function CounterDashboard() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        disabled={processing || selectedOrder.status !== 'done'}
+                        disabled={processing}
                         onClick={() => handlePayment('card')}
                         className="flex flex-col h-auto py-3 items-center text-xs"
                       >
@@ -186,7 +213,7 @@ export function CounterDashboard() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        disabled={processing || selectedOrder.status !== 'done'}
+                        disabled={processing}
                         onClick={() => handlePayment('upi')}
                         className="flex flex-col h-auto py-3 items-center text-xs"
                       >
@@ -194,8 +221,8 @@ export function CounterDashboard() {
                       </Button>
                     </div>
                     {selectedOrder.status !== 'done' && (
-                      <p className="text-xs text-orange-500 text-center mt-2">
-                        Must be "Ready for Billing" to process payment
+                      <p className="text-xs text-blue-500 text-center mt-2 font-semibold">
+                        Note: Order is still being {selectedOrder.status}
                       </p>
                     )}
                   </div>

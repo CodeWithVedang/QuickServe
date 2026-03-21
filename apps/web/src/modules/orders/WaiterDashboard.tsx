@@ -1,11 +1,12 @@
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { menuService, orderService } from '../../services/api';
 import { useOrderStore } from '../../store/orderStore';
 import { useAuthStore } from '../../store/authStore';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Plus, Minus, ShoppingCart, Search, Flame } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { useState } from 'react';
 
 const FILTER_TABS = [
   { label: 'All', key: 'All' },
@@ -34,7 +35,13 @@ export function WaiterDashboard() {
   const { user } = useAuthStore();
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [activeFilter, setActiveFilter] = useState('All');
+
+  // Reset search when activeFilter changes
+  useEffect(() => {
+    setSearchQuery('');
+  }, [activeFilter]);
 
   const handleSubmit = async () => {
     if (!tableNumber) return alert('Please select a table first');
@@ -57,7 +64,7 @@ export function WaiterDashboard() {
   const cartItemCount = items.reduce((s, i) => s + i.quantity, 0);
 
   const filteredMenu = menuItems?.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = item.name.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesFilter =
       activeFilter === 'All' ||
       item.meal_time === activeFilter ||
@@ -232,7 +239,7 @@ export function WaiterDashboard() {
                 <div className="grid grid-cols-5 gap-1.5">
                   {[...Array(20)].map((_, i) => {
                     const num = i + 1;
-                    const isOccupied = activeOrders?.some((o) => o.table_number === num && o.status !== 'done');
+                    const isOccupied = activeOrders?.some((o) => o.table_number === num && o.status !== 'paid' && o.status !== 'cancelled');
                     const isSelected = tableNumber === num;
                     return (
                       <button

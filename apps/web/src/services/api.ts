@@ -27,17 +27,46 @@ export const menuService = {
 };
 
 export const orderService = {
-  createOrder: async (tableNumber: number | null, items: { id: string, quantity: number }[], userId: string) => {
-    const { data: order, error: orderError } = await supabase
+  getLatestActiveOrder: async (tableNumber: number) => {
+    const { data, error } = await supabase
       .from('orders')
-      .insert({ table_number: tableNumber, created_by: userId, status: 'pending' })
-      .select()
-      .single();
+      .select('*, items:order_items(*, menu_item:menu_items(*))')
+      .eq('table_number', tableNumber)
+      .not('status', 'in', '("paid", "cancelled")')
+      .order('created_at', { ascending: false })
+      .maybeSingle();
     
-    if (orderError) throw orderError;
+    if (error) throw error;
+    return data as Order | null;
+  },
+
+  createOrder: async (tableNumber: number | null, items: { id: string, quantity: number }[], userId: string) => {
+    let orderId: string;
+    let existingOrder: Order | null = null;
+
+    if (tableNumber) {
+      existingOrder = await orderService.getLatestActiveOrder(tableNumber);
+    }
+
+    if (existingOrder) {
+      orderId = existingOrder.id;
+      // Update order status back to pending if it was done (new items added)
+      if (existingOrder.status === 'done') {
+        await supabase.from('orders').update({ status: 'pending' }).eq('id', orderId);
+      }
+    } else {
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({ table_number: tableNumber, created_by: userId, status: 'pending' })
+        .select()
+        .single();
+      
+      if (orderError) throw orderError;
+      orderId = order.id;
+    }
 
     const orderItems = items.map(item => ({
-      order_id: order.id,
+      order_id: orderId,
       menu_item_id: item.id,
       quantity: item.quantity,
       status: 'pending'
@@ -46,7 +75,9 @@ export const orderService = {
     const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
     if (itemsError) throw itemsError;
 
-    return order as Order;
+    // Return the order (either new or existing)
+    const { data: updatedOrder } = await supabase.from('orders').select('*').eq('id', orderId).single();
+    return updatedOrder as Order;
   },
 
   getOrdersByStatus: async (statuses: OrderStatus[]) => {
@@ -125,7 +156,7 @@ export const paymentService = {
     // Also mark order as completed/paid
     if (paymentData.order_id) {
        // Just marking it done but usually wait for payment. Here let's just complete it
-       await supabase.from('orders').update({ status: 'done' }).eq('id', paymentData.order_id);
+       await supabase.from('orders').update({ status: 'paid' }).eq('id', paymentData.order_id);
     }
   }
 };
