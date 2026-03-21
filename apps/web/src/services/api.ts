@@ -32,8 +32,9 @@ export const orderService = {
       .from('orders')
       .select('*, items:order_items(*, menu_item:menu_items(*))')
       .eq('table_number', tableNumber)
-      .not('status', 'in', '("paid", "cancelled")')
+      .in('status', ['pending', 'preparing', 'done'])
       .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
     
     if (error) throw error;
