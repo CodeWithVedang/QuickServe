@@ -1,0 +1,4 @@
+[
+  "❌ Failed to create fizz@quickserve.com: email rate limit exceeded - {\"__isAuthError\":true,\"name\":\"AuthApiError\",\"status\":429,\"code\":\"over_email_send_rate_limit\"}",
+  "\n🎉 ALL Dummy accounts completely registered!"
+]
