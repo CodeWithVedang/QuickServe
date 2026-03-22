@@ -161,3 +161,49 @@ export const paymentService = {
     }
   }
 };
+
+export const analyticsService = {
+  getSalesStats: async () => {
+    const now = new Date();
+    const startOfDay = new Date(new Date().setHours(0,0,0,0)).toISOString();
+    const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const lastYear = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [today, week, month, year, allTime] = await Promise.all([
+      supabase.from('payments').select('amount').gte('created_at', startOfDay),
+      supabase.from('payments').select('amount').gte('created_at', last7Days),
+      supabase.from('payments').select('amount').gte('created_at', last30Days),
+      supabase.from('payments').select('amount').gte('created_at', lastYear),
+      supabase.from('payments').select('amount')
+    ]);
+
+    return {
+      today: today.data?.reduce((s, p) => s + p.amount, 0) || 0,
+      week: week.data?.reduce((s, p) => s + p.amount, 0) || 0,
+      month: month.data?.reduce((s, p) => s + p.amount, 0) || 0,
+      year: year.data?.reduce((s, p) => s + p.amount, 0) || 0,
+      allTime: allTime.data?.reduce((s, p) => s + p.amount, 0) || 0,
+      transactionCount: allTime.data?.length || 0,
+    };
+  },
+
+  getCategorySales: async () => {
+    const { data: payments, error } = await supabase
+      .from('payments')
+      .select('amount, order:orders(items:order_items(menu_item:menu_items(category)))');
+    
+    if (error) throw error;
+    
+    const categoryTotals: Record<string, number> = {};
+    payments?.forEach(p => {
+      const items = (p.order as any)?.items || [];
+      items.forEach((i: any) => {
+        const cat = i.menu_item?.category || 'Other';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + (p.amount / items.length); // Rough split
+      });
+    });
+    
+    return Object.entries(categoryTotals).map(([name, value]) => ({ name, value }));
+  }
+};

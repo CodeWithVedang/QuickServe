@@ -7,6 +7,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { Plus, Minus, ShoppingCart, Search, Flame } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 const FILTER_TABS = [
   { label: 'All', key: 'All' },
@@ -77,27 +78,29 @@ export function WaiterDashboard() {
     return (
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="flex-1">
-          <div className="h-10 bg-gray-200 rounded w-48 mb-6 animate-pulse" />
-          <div className="flex gap-2 mb-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-8 bg-gray-200 rounded-full w-24 animate-pulse" />
+          <Skeleton className="h-10 w-48 mb-6 rounded-xl" />
+          <div className="flex gap-2 mb-4 overflow-hidden">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-9 w-24 rounded-full flex-shrink-0" />
             ))}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <div className="w-full h-36 bg-gray-200 rounded-t-xl" />
-                <CardContent className="p-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-3" />
-                  <div className="h-8 bg-gray-200 rounded w-full" />
+              <Card key={i} className="border-0 shadow-sm overflow-hidden">
+                <Skeleton className="w-full h-36 rounded-none" />
+                <CardContent className="p-3 space-y-3">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="h-9 w-full rounded-xl" />
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
         <div className="w-full lg:w-96">
-          <Card className="h-[600px] animate-pulse bg-gray-50" />
+          <Skeleton className="h-[600px] w-full rounded-2xl" />
         </div>
       </div>
     );
@@ -161,6 +164,7 @@ export function WaiterDashboard() {
                         <img
                           src={item.image_url}
                           alt={item.name}
+                          loading="lazy"
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = 'none';
@@ -242,20 +246,38 @@ export function WaiterDashboard() {
                     const isOccupied = activeOrders?.some((o) => o.table_number === num && o.status !== 'paid' && o.status !== 'cancelled');
                     const isSelected = tableNumber === num;
                     return (
-                      <button
+                      <div
                         key={num}
-                        onClick={() => !isOccupied && setTableNumber(num)}
-                        disabled={isOccupied}
-                        title={isOccupied ? `Table ${num} is occupied` : `Select Table ${num}`}
-                        className={`h-10 rounded-lg text-sm font-black transition-all duration-200
-                          ${isOccupied
-                            ? 'bg-red-50 text-red-300 cursor-not-allowed border border-red-100'
-                            : isSelected
-                            ? 'bg-primary text-white scale-110 shadow-md shadow-orange-300'
-                            : 'bg-gray-50 border border-gray-200 text-gray-700 hover:border-primary/40 hover:bg-orange-50'}`}
+                        onClick={() => setTableNumber(num)}
+                        className={`
+                          p-2 rounded-xl border-2 cursor-pointer transition-all duration-300
+                          flex flex-col items-center justify-center gap-1 relative overflow-hidden
+                          ${isSelected
+                            ? 'border-primary bg-orange-50 ring-2 ring-primary/20 shadow-lg scale-105'
+                            : isOccupied
+                              ? 'border-orange-200 bg-orange-50 hover:border-orange-400 hover:shadow-md'
+                              : 'border-gray-100 bg-white hover:border-gray-300 hover:shadow-md'
+                          }
+                        `}
                       >
-                        {num}
-                      </button>
+                        <div className={`
+                          w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                          ${isSelected
+                            ? 'bg-primary text-white shadow-md'
+                            : isOccupied
+                              ? 'bg-orange-100 text-orange-600'
+                              : 'bg-gray-50 text-gray-400 group-hover:bg-gray-100'
+                          }
+                        `}>
+                          {num}
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isOccupied ? 'text-orange-600' : 'text-gray-400'}`}>
+                          {isOccupied ? 'Occupied' : 'Available'}
+                        </span>
+                        {isOccupied && (
+                          <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-lg" />
+                        )}
+                      </div>
                     );
                   })}
                 </div>
