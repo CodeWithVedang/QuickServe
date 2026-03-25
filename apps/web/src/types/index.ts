@@ -1,5 +1,5 @@
 export type Role = 'waiter' | 'kitchen' | 'counter' | 'admin';
-export type OrderStatus = 'pending' | 'preparing' | 'done' | 'cancelled';
+export type OrderStatus = 'pending' | 'preparing' | 'done' | 'cancelled' | 'paid';
 export type PaymentMethod = 'cash' | 'upi' | 'card';
 
 export interface User {

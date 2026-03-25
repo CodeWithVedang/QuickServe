@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { CheckCircle2 } from 'lucide-react';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../utils/cn';
 
 export function KitchenDashboard() {
@@ -55,17 +56,42 @@ export function KitchenDashboard() {
 
   if (isLoading) {
     return (
-      <div>
-        <div className="h-8 bg-gray-200 w-48 rounded mb-6 animate-pulse" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64 rounded-lg" />
         <div className="flex flex-col md:flex-row gap-6">
-           <div className="flex-1 bg-gray-100/50 p-4 rounded-xl min-h-[500px]">
+           <div className="flex-1 bg-gray-50/50 p-4 rounded-2xl min-h-[500px] border border-gray-100">
              <div className="space-y-4">
-               {[1, 2, 3].map(i => <Card key={i} className="h-32 bg-white animate-pulse" />)}
+               {[1, 2, 3].map(i => (
+                 <Card key={i} className="border-0 shadow-sm overflow-hidden">
+                   <CardContent className="p-4 space-y-4">
+                     <div className="flex justify-between">
+                       <Skeleton className="h-6 w-24" />
+                       <Skeleton className="h-4 w-16" />
+                     </div>
+                     <div className="space-y-2">
+                       <Skeleton className="h-4 w-full" />
+                       <Skeleton className="h-4 w-full" />
+                     </div>
+                     <Skeleton className="h-10 w-full rounded-xl" />
+                   </CardContent>
+                 </Card>
+               ))}
              </div>
            </div>
-           <div className="flex-1 bg-gray-100/50 p-4 rounded-xl min-h-[500px]">
+           <div className="flex-1 bg-gray-50/50 p-4 rounded-2xl min-h-[500px] border border-gray-100">
              <div className="space-y-4">
-               {[1, 2].map(i => <Card key={i} className="h-32 bg-white animate-pulse" />)}
+               {[1, 2].map(i => (
+                 <Card key={i} className="border-0 shadow-sm overflow-hidden">
+                   <CardContent className="p-4 space-y-4">
+                     <div className="flex justify-between">
+                       <Skeleton className="h-6 w-24" />
+                       <Skeleton className="h-4 w-16" />
+                     </div>
+                     <Skeleton className="h-4 w-full" />
+                     <Skeleton className="h-10 w-full rounded-xl" />
+                   </CardContent>
+                 </Card>
+               ))}
              </div>
            </div>
         </div>
