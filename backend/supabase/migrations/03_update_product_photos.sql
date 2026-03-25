@@ -1,3 +1,4 @@
+
 -- Update missing or placeholder images with high-quality working Unsplash URLs
 UPDATE public.menu_items SET image_url = 'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?q=80&w=800' WHERE name = 'Garlic Naan';
 UPDATE public.menu_items SET image_url = 'https://images.unsplash.com/photo-1596797038558-b39b114e7071?q=80&w=800' WHERE name = 'Butter Roti';
